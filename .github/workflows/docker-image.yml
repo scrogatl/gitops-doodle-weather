@@ -23,5 +23,5 @@ jobs:
 
       - name: 'Build'
         run: |
-          docker build . --tag ghcr.io/scrogatl/doodle-weather:latest 
+          docker build . --tag ghcr.io/scrogatl/doodle-weather:linux-:$(git rev-parse --short HEAD)
           docker push ghcr.io/scrogatl/doodle-weather:latest
