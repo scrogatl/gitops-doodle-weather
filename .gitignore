@@ -3,5 +3,6 @@ venv*
 __pycache__
 .DS_STORE
 *.BAK
+.vs/
 bin/
 obj/
