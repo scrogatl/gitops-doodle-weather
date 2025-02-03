@@ -5,3 +5,5 @@ __pycache__
 *.BAK
 bin/
 obj/
+.fuse*
+ecs-task*
