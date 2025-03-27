@@ -22,7 +22,7 @@ var summaries = new[]
 app.MapGet("/", () =>
 {
     var forecast =  Enumerable.Range(1, 1).Select(index =>
-        new WeatherForecast
+        new 
         (
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
             Random.Shared.Next(-20, 55),

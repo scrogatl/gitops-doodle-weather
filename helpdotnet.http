@@ -1,6 +1,6 @@
 @helpdotnet_HostAddress = http://localhost:5070
 
-GET {{helpdotnet_HostAddress}}/weatherforecast/
+GET {{helpdotnet_HostAddress}}/
 Accept: application/json
 
 ###
