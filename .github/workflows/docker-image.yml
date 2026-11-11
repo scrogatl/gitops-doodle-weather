@@ -2,45 +2,61 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main", "new_relic"]
-    tags: 
-      - '*'
-
-  # workflow_dispatch:
-  #  branches: [ "main" ]
-
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push images to ghcr (false = build only)"
+        type: boolean
+        default: false
+      tag_suffix:
+        description: "Suffix added to every tag, e.g. -test (also skips the legacy :main/:latest tags)"
+        type: string
+        default: ""
 
 jobs:
   build-push-weather:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flavor: [plain, newrelic]
     steps:
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
-          # list of Docker images to use as base name for tags
           images: |
             ghcr.io/scrogatl/doodle-weather
-          # generate Docker tags based on the following events/attributes
+          # :<flavor> and :<flavor>-<sha> for every flavor.
+          # The plain flavor also keeps the legacy :main and :latest tags.
           tags: |
-            type=raw,value={{branch}}
-            type=raw,value=latest
+            type=raw,value=${{ matrix.flavor }}${{ inputs.tag_suffix }}
+            type=sha,prefix=${{ matrix.flavor }}${{ inputs.tag_suffix }}-
+            type=raw,value=main,enable=${{ matrix.flavor == 'plain' && inputs.tag_suffix == '' }}
+            type=raw,value=latest,enable=${{ matrix.flavor == 'plain' && inputs.tag_suffix == '' }}
 
       - name: 'Checkout GitHub Action'
-        uses: actions/checkout@main
-    
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{secrets.GITHUB_TOKEN}}      
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
+          target: ${{ matrix.flavor }}
           platforms: linux/amd64
-          push: true
+          push: ${{ github.event_name == 'push' || inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=${{ matrix.flavor }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.flavor }}
